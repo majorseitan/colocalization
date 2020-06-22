@@ -2,10 +2,42 @@ import React, { Component } from 'react';
 
 import './App.css';
 
+class Summary extends Component {
+    constructor() {
+	super()
+
+	this.state = {
+	    data : null,
+	    loading: true
+	};
+    }
+    async componentDidMount() {
+	const dataRequest = await fetch('/colocation/summary');
+    const data = await dataRequest.json();
+
+        if (data) {
+            this.setState({
+                 data: data,
+                 loading: false,
+	    });
+        }
+    }
+
+    render() {
+	if(this.state.loading){
+	    return <div>Loading ... </div>
+	} else {
+	    let summary = this.state.data;
+	    return (<div>This region has {` ${ summary.count }`} colocations ,
+		         unique genes {` ${ summary.unique_phenotype2 }`} ,
+		         unique tissues {` ${ summary.unique_tissue2 }`}
+		    </div>)
+	}
+    }
+}
+
 const Value = ({value}) => {
-    return (
-	    <td>{ `${value}` }</td>
-    )
+    return (<td class="text-muted">{ `${value}` }</td>)
 }
 
 const Colocation = ({colocation}) => {
@@ -19,7 +51,6 @@ const Colocation = ({colocation}) => {
 	    <Value value={colocation.phenotype2}/>
 	    <Value value={colocation.phenotype2_description}/>
 
-	    <Value value={colocation.tissue1}/>
 	    <Value value={colocation.tissue2}/>
 	    <Value value={colocation.locus_id1}/>
 	    <Value value={colocation.locus_id2}/>
@@ -56,12 +87,12 @@ class List extends Component {
 	};
     }
     async componentDidMount() {
-	const data = await fetch('/colocation');
-        const dataJSON = await data.json();
+	const dataRequest = await fetch('/colocation');
+    const data = await dataRequest.json();
 
-        if (dataJSON) {
+        if (data) {
             this.setState({
-                 data: dataJSON,
+                 data: data,
                  loading: false,
 	    });
         }
@@ -82,6 +113,7 @@ function App() {
     <div>
 	 <header></header>
 	 <div id="content">
+	  <Summary />
           <table class="table">
            <tr>
 	    <td>source1</td>
@@ -92,7 +124,6 @@ function App() {
 	    <td>phenotype2</td>
 	    <td>phenotype2_description</td>
 
-	    <td>tissue1</td>
 	    <td>tissue2</td>
 	    <td>locus_id1</td>
 	    <td>locus_id2</td>
