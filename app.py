@@ -1,6 +1,7 @@
+import typing
 import click
-from colocation.model import data_cli, db, query, summary, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
-from flask import Flask, send_from_directory
+from colocation.model import data_cli, db, query, summary, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, list_phenotype1
+from flask import Flask, send_from_directory, request
 
 import json
 app = Flask(__name__, static_folder='static')
@@ -10,6 +11,23 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 
 app.cli.add_command(data_cli)
 db.init_app(app)
+
+
+def get_min_clpa() -> typing.Optional[float]:
+    return request.args.get('min_clpa')
+
+def get_sort_by() -> typing.Optional[str]:
+    return request.args.get('sort_by')
+
+def get_desc() -> bool:
+    order_by = request.args.get('order_by')
+    if order_by == 'desc':
+        desc = True
+    elif order_by == 'asc':
+        desc = False
+    else:
+        desc = True
+    return desc
 
 
 @app.route('/')
@@ -32,11 +50,21 @@ def send_media(path):
 def send_css(path):
     return send_from_directory('static/static/css', path)
 
-@app.route('/colocation')
-def do_query():
-    return json.dumps(query())
+
+@app.route('/phenotype1')
+def do_list_phenotype1():
+    return json.dumps(list_phenotype1(min_clpa=get_min_clpa(),
+                                      desc=get_desc()))
+
+@app.route('/colocation/<string:phenotype1>')
+def do_query(phenotype1):
+    return json.dumps(query(phenotype1,
+                            min_clpa = get_min_clpa(),
+                            sort_by = get_sort_by(),
+                            desc = get_desc()))
 
 
-@app.route('/colocation/summary')
-def do_summary():
-    return json.dumps(summary())
+@app.route('/colocation/<string:phenotype1>/summary')
+def do_summary(phenotype1):
+    return json.dumps(summary(phenotype1,
+                              min_clpa = get_min_clpa()))

@@ -5,7 +5,7 @@ from flask.cli import AppGroup, with_appcontext
 from flask_sqlalchemy import SQLAlchemy
 import os
 import json
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 
 db = SQLAlchemy()
 data_cli = AppGroup('data')
@@ -47,10 +47,22 @@ class Colocalization(db.Model):
     len_cs2 = db.Column(db.Integer, unique=False, nullable=False)
     len_inter = db.Column(db.Integer, unique=False, nullable=False)
 
+
+    @staticmethod
+    def column_names():
+        return [ c.name for c in Colocalization.__table__.columns ]
+
 @data_cli.command("init")
 @with_appcontext
 def load_data() -> None:
     db.create_all()
+
+
+@data_cli.command("harness")
+@with_appcontext
+def load_data() -> None:
+    import pdb; pdb.set_trace()
+
 
 
 X = typing.TypeVar('X')
@@ -76,36 +88,54 @@ def filter_min_cpla(min_clpa: typing.Optional[float]):
     return filter_term
 
 
-def order_by_criterion(field_name: typing.Optional[str]):
-    criterion = None
-    if field_name:
-        criterion = [Colocalization.clpa.desc()]
+def order_by_criterion(sort_by: typing.Optional[str],
+                       desc: typing.Optional[bool]):
+    column_name = Colocalization.column_names()
+
+    if sort_by is not None and sort_by.lower() in column_name:
+        column = getattr(Colocalization, sort_by)
+        if desc:
+            column = column.desc()
+        else:
+            column = column.asc()
+        criterion = [column]
     else:
-        criterion = [Colocalization.clpa.desc()]
+        criterion = []
     return criterion
 
 
-def query(min_clpa: typing.Optional[float] = None, order_by: typing.Optional[str] = None):
+
+def query(phenotype1: str,
+          min_clpa: typing.Optional[float] = None,
+          sort_by: typing.Optional[str] = None,
+          desc: bool = True):
     q = db.session.query(Colocalization)
     q = q.filter(*filter_min_cpla(min_clpa))
-    q = q.order_by(*order_by_criterion(order_by))
+    q = q.filter(Colocalization.phenotype1 == phenotype1)
+    q = q.order_by(*order_by_criterion(sort_by, desc))
     colocalizations = q.all()
-    # TODO
-    # clean up
-    colocalizations = map(lambda c: {k: v for k, v in vars(c).items() if not k.startswith('_')}, colocalizations)
+    colocalizations = map(lambda r: {c: getattr(r,c) for c in Colocalization.column_names() }, colocalizations)
     colocalizations = list(colocalizations)
     return colocalizations
 
 
-def summary(min_clpa: typing.Optional[float] = None):
+def summary(phenotype1: str,
+            min_clpa: typing.Optional[float] = None):
     count = db.session.query(Colocalization).count()
-    unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(*filter_min_cpla(min_clpa)).scalar()
-    unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(*filter_min_cpla(min_clpa)).scalar()
+    unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
+    unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
     result = {"count": count,
               "unique_phenotype2": unique_phenotype2,
               "unique_tissue2": unique_tissue2}
     return result
 
+
+def list_phenotype1(min_clpa: typing.Optional[float] = None,
+                    desc=True):
+    q = db.session.query(distinct(Colocalization.phenotype1))
+    q = q.filter(*filter_min_cpla(min_clpa))
+    phenotype1 = [r[0] for r in q.all()]
+    return phenotype1
 
 @data_cli.command("load")
 @click.argument("path")
