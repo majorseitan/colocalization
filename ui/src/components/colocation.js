@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 const Value = ({value}) => {
-    return (<td class="text-muted">{ `${value}` }</td>)
+    return (<td className="text-muted">{ `${value}` }</td>)
 }
 
 const Colocation = ({colocation}) => {
@@ -24,7 +24,7 @@ class ColocationList extends Component {
 
 	this.state = { data : [], loading: true }; }
 
-    async componentDidMount() {
+    async updateColocationList(){
         	if(this.props.phenotype1 != null){
 	            const dataRequest = await fetch(`/colocation/${this.props.phenotype1}?min_clpa=0.1&sort_by=clpa&order_by=desc`);
                 const data = await dataRequest.json();
@@ -35,13 +35,17 @@ class ColocationList extends Component {
              }
     }
 
+    async componentDidMount() { this.updateColocationList(); }
+    async componentDidUpdate() { this.updateColocationList(); }
+
+
     render() {
 	if(this.props.phenotype1 == null){
         return <div/>
     } else if(this.state.loading){
 	    return <div>Loading ... </div>
 	} else {
-	    return <table class="table">
+	    return <table className="table">
 	        <thead>
                    <tr>
 	                   <th>source1</th>
@@ -52,7 +56,9 @@ class ColocationList extends Component {
                        <th>clpa</th>
                    </tr>
 	        </thead>
-	        { this.state.data.map(c => <Colocation key={c.id} colocation={ c } />) }
+	        <tbody>
+	        { this.state.data.map((c,i) => <Colocation key={i} colocation={ c } />) }
+	        </tbody>
         </table>
 
 

@@ -11,15 +11,12 @@ import { Provider } from 'react-redux';
 
 const store = createStore(search_parameters);
 
-
-
-class App extends Component {
+class Content extends Component {
   render(){
-  console.log(this);
   const phenotype1 = this.props.phenotype1;
   const update_phenotype1 = this.props.update_phenotype1;
+  console.log(phenotype1);
   return (
-  <Provider store={store}>
     <div>
 	 <header></header>
 	  <div id="content">
@@ -33,9 +30,20 @@ class App extends Component {
 	     <p></p>
 	     <ColocationList phenotype1={ phenotype1 } />
        </div>
-    </div>
-  </Provider>);
+    </div>);
+  }
+}
+// https://stackoverflow.com/questions/41892553/could-not-find-store-in-either-the-context-or-props-of-connectapp
+const ConnectedContent = connector(Content);
+
+class App extends Component {
+render() {
+    return (
+      <Provider store={store}>
+        <ConnectedContent />
+      </Provider>
+    );
   }
 }
 
-export default connector(App);
+export default App;

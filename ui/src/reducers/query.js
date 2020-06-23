@@ -2,6 +2,7 @@ import { connect } from 'react-redux';
 
 // action
 const update_phenotype1 = (phenotype1) => {
+    console.log('UPDATE_PHENOTYPE1 : ' + phenotype1);
     return { type: 'UPDATE_PHENOTYPE1',
              phenotype1 }
 }
@@ -27,16 +28,16 @@ const start_state = { phenotype1 : null,
 const search_parameters = (state = start_state,action) => {
     switch(action.type){
         case 'UPDATE_PHENOTYPE1' :
-            return { ...state, phenotype1 : state.phenotype1 };
+            return { ...state, phenotype1 : action.phenotype1 };
 
         case 'UPDATE_CHROMOSOME' :
-            return { ...state, chromosome : state.chromosome };
+            return { ...state, chromosome : action.chromosome };
 
         case 'UPDATE_START' :
-            return { ...state, start : state.start };
+            return { ...state, start : action.start };
 
         case 'UPDATE_STOP' :
-           return { ...state, stop : state.stop };
+           return { ...state, stop : action.stop };
 
         default:
             return state;
@@ -44,12 +45,10 @@ const search_parameters = (state = start_state,action) => {
 }
 
 function mapStateToProps(state) {
-    console.log("state");
   return { ...state };
 };
 
 function mapDispatchToProps(dispatch){
-    console.log("dispatch");
     return { update_phenotype1 : (phenotype1) => dispatch(update_phenotype1(phenotype1)) ,
              update_chromosome : (chromosome) => dispatch(update_chromosome(chromosome)) ,
              update_start : (start) => dispatch(update_start(start)) ,

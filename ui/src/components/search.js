@@ -10,16 +10,14 @@ class Search extends Component {
 	};
     }
     async componentDidMount() {
-	      const dataRequest = await fetch('/phenotype1?min_clpa=0.1');
+ 	      const dataRequest = await fetch('/phenotype1?min_clpa=0.1');
           const data = await dataRequest.json();
 
           if (data) { this.setState({  data: data, loading: false, }); }
     }
 
-  render(){
+    render(){
     const update_phenotype1 = this.props.update_phenotype1;
-    const test = () => { alert(update_phenotype1); };
-    console.log(update_phenotype1);
   	if(this.state.loading){
 	    return <div>Loading ... </div>
 	} else {
@@ -28,7 +26,7 @@ class Search extends Component {
                 <p></p>
                 <form>
                     <div className="form-group row">
-                        <select defaultValue={'DEFAULT'}  onChange={ test }>
+                        <select defaultValue={'DEFAULT'}  onChange={ (e) => update_phenotype1(e.target.value) }>
                             <option disabled value="DEFAULT">Please select Phenotype1</option>
                             { this.state.data.map(c => <option key={c} value={ c }>{c}</option>) }
                          </select>

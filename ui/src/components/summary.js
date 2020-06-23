@@ -10,7 +10,8 @@ class Summary extends Component {
 	    loading: true
 	};
     }
-    async componentDidMount() {
+
+    async updateSummary(){
          if(this.props.phenotype1 != null){
 
 	          const dataRequest = await fetch(`/colocation/${this.props.phenotype1}/summary?min_clpa=0.1`);
@@ -19,6 +20,10 @@ class Summary extends Component {
               if (data) { this.setState({  data: data, loading: false, }); }
          }
     }
+
+    async componentDidMount() { this.updateSummary(); }
+    async componentDidUpdate() { this.updateSummary(); }
+
 
     render() {
     if(this.props.phenotype1 == null){
