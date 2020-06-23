@@ -79,9 +79,9 @@ def filter_min_cpla(min_clpa: typing.Optional[float]):
 def order_by_criterion(field_name: typing.Optional[str]):
     criterion = None
     if field_name:
-        criterion = [Colocalization.clpa]
+        criterion = [Colocalization.clpa.desc()]
     else:
-        criterion = [Colocalization.clpa]
+        criterion = [Colocalization.clpa.desc()]
     return criterion
 
 
@@ -105,6 +105,7 @@ def summary(min_clpa: typing.Optional[float] = None):
               "unique_phenotype2": unique_phenotype2,
               "unique_tissue2": unique_tissue2}
     return result
+
 
 @data_cli.command("load")
 @click.argument("path")
