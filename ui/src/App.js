@@ -1,120 +1,41 @@
 import React, { Component } from 'react';
 
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { createStore } from 'redux';
+import { search_parameters , connector }  from './reducers/query'
+import ColocationList from './components/colocation'
+import Summary from './components/summary'
+import Search from './components/search'
+import { Provider } from 'react-redux';
 
-class Summary extends Component {
-    constructor() {
-	super()
-
-	this.state = {
-	    data : null,
-	    loading: true
-	};
-    }
-    async componentDidMount() {
-	const dataRequest = await fetch('/colocation/summary');
-    const data = await dataRequest.json();
-
-        if (data) {
-            this.setState({
-                 data: data,
-                 loading: false,
-	    });
-        }
-    }
-
-    render() {
-	if(this.state.loading){
-	    return <div>Loading ... </div>
-	} else {
-	    let summary = this.state.data;
-	    return (<div>This region has {` ${ summary.count }`} colocations ,
-		         unique genes {` ${ summary.unique_phenotype2 }`} ,
-		         unique tissues {` ${ summary.unique_tissue2 }`}
-		    </div>)
-	}
-    }
-}
-
-const Value = ({value}) => {
-    return (<td class="text-muted">{ `${value}` }</td>)
-}
-
-const Colocation = ({colocation}) => {
-    return (
-	<tr>
-
-	    <Value value={colocation.source1}/>
-
-	    <Value value={colocation.locus_id1}/>
-
-	    <Value value={colocation.phenotype2}/>
-	    <Value value={colocation.phenotype2_description}/>
-
-	    <Value value={colocation.clpp}/>
-
-	    <Value value={colocation.clpa}/>
-
-	</tr>
-    )
-};
-
-class List extends Component {
-    constructor() {
-	super()
-
-	this.state = {
-	    data : [],
-	    loading: true
-	};
-    }
-    async componentDidMount() {
-	const dataRequest = await fetch('/colocation');
-    const data = await dataRequest.json();
-
-        if (data) {
-            this.setState({
-                 data: data,
-                 loading: false,
-	    });
-        }
-    }
-
-    render() {
-	if(this.state.loading){
-	    return <div>Loading ... </div>
-	} else {
-	    return this.state.data.map(c => <Colocation key={c.id} colocation={ c } />)
-	}
-    }
-}
+const store = createStore(search_parameters);
 
 
-function App() {
+
+class App extends Component {
+  render(){
+  console.log(this);
+  const phenotype1 = this.props.phenotype1;
+  const update_phenotype1 = this.props.update_phenotype1;
   return (
+  <Provider store={store}>
     <div>
 	 <header></header>
-	 <div id="content">
-	  <Summary />
-          <table class="table">
-           <tr>
-
-	            <td>source1</td>
-
-	            <td>locus_id1</td>
-
-        	    <td>phenotype1</td>
-	            <td>phenotype1_description</td>
-
-	            <td>clpp</td>
-        	    <td>clpa</td>
-
-           </tr>
-	   <List />
-         </table>
+	  <div id="content">
+	     <Search update_phenotype1={ update_phenotype1 } />
+	     <div className="card">
+                <h5 className="card-header">colocation</h5>
+	        <div className="card-body">
+  	           <Summary phenotype1={ phenotype1 } />
+	        </div>
+	     </div>
+	     <p></p>
+	     <ColocationList phenotype1={ phenotype1 } />
        </div>
     </div>
-  );
+  </Provider>);
+  }
 }
 
-export default App;
+export default connector(App);
