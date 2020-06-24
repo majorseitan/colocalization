@@ -26,7 +26,7 @@ class ColocationList extends Component {
 
     async updateColocationList(){
         	if(this.props.phenotype1 != null){
-	            const dataRequest = await fetch(`/colocation/${this.props.phenotype1}?min_clpa=0.1&sort_by=clpa&order_by=desc`);
+	            const dataRequest = await fetch(`/api/colocation/${this.props.phenotype1}?min_clpa=0.1&sort_by=clpa&order_by=desc`);
                 const data = await dataRequest.json();
 
                 if (data) {

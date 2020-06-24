@@ -10,7 +10,7 @@ from sqlalchemy import func, distinct
 db = SQLAlchemy()
 data_cli = AppGroup('data')
 
-SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////tmp/test.db')
+SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////tmp/tmp.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = json.loads(os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', 'False').lower())
 
 
@@ -104,32 +104,6 @@ def order_by_criterion(sort_by: typing.Optional[str],
     return criterion
 
 
-
-def query(phenotype1: str,
-          min_clpa: typing.Optional[float] = None,
-          sort_by: typing.Optional[str] = None,
-          desc: bool = True):
-    q = db.session.query(Colocalization)
-    q = q.filter(*filter_min_cpla(min_clpa))
-    q = q.filter(Colocalization.phenotype1 == phenotype1)
-    q = q.order_by(*order_by_criterion(sort_by, desc))
-    colocalizations = q.all()
-    colocalizations = map(lambda r: {c: getattr(r,c) for c in Colocalization.column_names() }, colocalizations)
-    colocalizations = list(colocalizations)
-    return colocalizations
-
-
-def summary(phenotype1: str,
-            min_clpa: typing.Optional[float] = None):
-    count = db.session.query(Colocalization).count()
-    unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
-    unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
-    result = {"count": count,
-              "unique_phenotype2": unique_phenotype2,
-              "unique_tissue2": unique_tissue2}
-    return result
-
-
 def list_phenotype1(min_clpa: typing.Optional[float] = None,
                     desc=True):
     q = db.session.query(distinct(Colocalization.phenotype1))
@@ -137,9 +111,6 @@ def list_phenotype1(min_clpa: typing.Optional[float] = None,
     phenotype1 = [r[0] for r in q.all()]
     return phenotype1
 
-@data_cli.command("load")
-@click.argument("path")
-@with_appcontext
 def load_data(path: str) -> None:
     with open(path, 'r') as csv_file:
         reader = csv.reader(csv_file, delimiter='\t', )
@@ -158,35 +129,75 @@ def load_data(path: str) -> None:
         actual_header = next(reader)
         assert expected_header == actual_header, f"expected header '{expected_header}' got '{actual_header}'"
         for line in reader:
-            colocalization = Colocalization(source1=nvl(line[0]),
-                                            source2=nvl(line[1]),
-
-                                            phenotype1=nvl(line[2]),
-                                            phenotype1_description=nvl(line[3]),
-                                            phenotype2=nvl(line[4]),
-                                            phenotype2_description=nvl(line[5]),
-
-                                            tissue1=nvl(line[6]),
-                                            tissue2=nvl(line[7]),
-                                            locus_id1=nvl(line[8]),
-                                            locus_id2=nvl(line[9]),
-
-                                            chromosome=nvl(line[10], int),
-                                            start=nvl(line[11], int),
-                                            stop=nvl(line[12], int),
-
-                                            clpp=nvl(line[13], float),
-                                            clpa=nvl(line[14], float),
-                                            beta_id1=nvl(line[15], float),
-                                            beta_id2=nvl(line[16], float),
-
-                                            variation=line[17],
-                                            vars_pip1=line[18],
-                                            vars_pip2=line[19],
-                                            vars_beta1=line[20],
-                                            vars_beta2=line[21],
-                                            len_cs1=nvl(line[22], int),
-                                            len_cs2=nvl(line[23], int),
-                                            len_inter=nvl(line[24], int))
+            colocalization = csv_to_colocalization(line)
             db.session.add(colocalization)
             db.session.commit()
+
+def load_phenotype1(path):
+    db.session.query(Colocalization).delete(synchronize_session='evaluate')
+    load_data(path)
+
+
+def list_colocation(phenotype1: str,
+                    min_clpa: typing.Optional[float] = None,
+                    sort_by: typing.Optional[str] = None,
+                    desc: bool = True):
+    q = db.session.query(Colocalization)
+    q = q.filter(*filter_min_cpla(min_clpa))
+    q = q.filter(Colocalization.phenotype1 == phenotype1)
+    q = q.order_by(*order_by_criterion(sort_by, desc))
+    colocalizations = q.all()
+    colocalizations = map(lambda r: {c: getattr(r,c) for c in Colocalization.column_names() }, colocalizations)
+    colocalizations = list(colocalizations)
+    return colocalizations
+
+def summary_colocation(phenotype1: str,
+                       min_clpa: typing.Optional[float] = None):
+    count = db.session.query(Colocalization).count()
+    unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
+    unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
+    result = {"count": count,
+              "unique_phenotype2": unique_phenotype2,
+              "unique_tissue2": unique_tissue2}
+    return result
+
+
+def csv_to_colocalization(line):
+    colocalization = Colocalization(source1=nvl(line[0]),
+                                    source2=nvl(line[1]),
+
+                                    phenotype1=nvl(line[2]),
+                                    phenotype1_description=nvl(line[3]),
+                                    phenotype2=nvl(line[4]),
+                                    phenotype2_description=nvl(line[5]),
+
+                                    tissue1=nvl(line[6]),
+                                    tissue2=nvl(line[7]),
+                                    locus_id1=nvl(line[8]),
+                                    locus_id2=nvl(line[9]),
+
+                                    chromosome=nvl(line[10], int),
+                                    start=nvl(line[11], int),
+                                    stop=nvl(line[12], int),
+
+                                    clpp=nvl(line[13], float),
+                                    clpa=nvl(line[14], float),
+                                    beta_id1=nvl(line[15], float),
+                                    beta_id2=nvl(line[16], float),
+
+                                    variation=line[17],
+                                    vars_pip1=line[18],
+                                    vars_pip2=line[19],
+                                    vars_beta1=line[20],
+                                    vars_beta2=line[21],
+                                    len_cs1=nvl(line[22], int),
+                                    len_cs2=nvl(line[23], int),
+                                    len_inter=nvl(line[24], int))
+    return colocalization
+
+@data_cli.command("load")
+@click.argument("path")
+@with_appcontext
+def cli_load(path: str) -> None:
+    load_data(path)
+

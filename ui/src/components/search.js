@@ -10,7 +10,7 @@ class Search extends Component {
 	};
     }
     async componentDidMount() {
- 	      const dataRequest = await fetch('/phenotype1?min_clpa=0.1');
+ 	      const dataRequest = await fetch('/api/colocation?min_clpa=0.1');
           const data = await dataRequest.json();
 
           if (data) { this.setState({  data: data, loading: false, }); }
