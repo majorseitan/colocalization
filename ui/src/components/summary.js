@@ -14,7 +14,7 @@ class Summary extends Component {
     async updateSummary(){
          if(this.props.phenotype1 != null){
 
-	          const dataRequest = await fetch(`/api/colocation/${this.props.phenotype1}/summary?min_clpa=0.1`);
+	          const dataRequest = await fetch(`/api/colocalization/${this.props.phenotype1}/summary?min_clpa=0.1`);
               const data = await dataRequest.json();
 
               if (data) { this.setState({  data: data, loading: false, }); }
@@ -22,7 +22,7 @@ class Summary extends Component {
     }
 
     async componentDidMount() { this.updateSummary(); }
-    async componentDidUpdate() { this.updateSummary(); }
+    //async componentDidUpdate() { this.updateSummary(); }
 
 
     render() {
@@ -32,7 +32,7 @@ class Summary extends Component {
 	    return <div>Loading ... </div>
 	} else {
 	    let summary = this.state.data;
-	    return (<p>This region has {` ${ summary.count }`} colocations ,
+	    return (<p>This region has {` ${ summary.count }`} colocalizations ,
 		         unique genes {` ${ summary.unique_phenotype2 }`} ,
 		         unique tissues {` ${ summary.unique_tissue2 }`}
 		    </p>)
@@ -51,7 +51,7 @@ class SummaryCard extends Component {
         return <p></p>;
     } else {
         return <div className="card">
-                    <h5 className="card-header">colocation</h5>
+                    <h5 className="card-header">colocalization</h5>
 	                <div className="card-body">
   	                    <Summary phenotype1={ phenotype1 } />
   	                </div>

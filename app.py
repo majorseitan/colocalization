@@ -1,18 +1,13 @@
-import uuid
 import typing
 import click
-from colocation.model import list_phenotype1, load_phenotype1, list_colocation, summary_colocation
-from colocation.model import data_cli, db
-from colocation.model import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, list_phenotype1
 from flask import Flask, send_from_directory, request
 import logging
 import json
 import os
 from werkzeug.utils import secure_filename
-
-username = uuid.uuid4()
-password = uuid.uuid4()
-
+from colocalization.model import list_phenotype1, load_phenotype1, list_colocalization, summary_colocalization
+from colocalization.model import data_cli, db
+from colocalization.model import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, list_phenotype1
 
 app = Flask(__name__, static_folder='static')
 
@@ -60,13 +55,13 @@ def send_css(path):
     return send_from_directory('static/static/css', path)
 
 
-@app.route('/api/colocation', methods=["GET"])
+@app.route('/api/colocalization', methods=["GET"])
 def get_phenotype1():
     return json.dumps(list_phenotype1(min_clpa=get_min_clpa(),
                                       desc=get_desc()))
 
 
-@app.route('/api/colocation', methods=["POST"])
+@app.route('/api/colocalization', methods=["POST"])
 def post_phenotype1():
     f = request.files['csv']
     path = secure_filename(f.filename)
@@ -74,16 +69,15 @@ def post_phenotype1():
     return json.dumps(load_phenotype1(path))
 
 
-@app.route('/api/colocation/<string:phenotype1>', methods=["GET"])
-def get_colocation(phenotype1):
-    return json.dumps(list_colocation(phenotype1,
+@app.route('/api/colocalization/<string:phenotype1>', methods=["GET"])
+def get_colocalization(phenotype1):
+    return json.dumps(list_colocalization(phenotype1,
                                       min_clpa = get_min_clpa(),
                                       sort_by = get_sort_by(),
                                       desc = get_desc()))
 
 
-@app.route('/api/colocation/<string:phenotype1>/summary', methods=["GET"])
+@app.route('/api/colocalization/<string:phenotype1>/summary', methods=["GET"])
 def do_summary(phenotype1):
-    return json.dumps(summary_colocation(phenotype1,
-                                         min_clpa = get_min_clpa()))
-
+    return json.dumps(summary_colocalization(phenotype1,
+                                             min_clpa = get_min_clpa()))

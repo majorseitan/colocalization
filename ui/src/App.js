@@ -4,7 +4,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { createStore } from 'redux';
 import { search_parameters , connector }  from './reducers/query'
-import ColocationList from './components/colocation'
+import ColocalizationList from './components/colocalization'
 import { SummaryCard } from './components/summary'
 import Search from './components/search'
 import { Provider } from 'react-redux';
@@ -23,7 +23,7 @@ class Content extends Component {
 	     <Search update_phenotype1={ update_phenotype1 } />
 	     <SummaryCard phenotype1={ phenotype1 } />
 	     <p></p>
-	     <ColocationList phenotype1={ phenotype1 } />
+	     <ColocalizationList phenotype1={ phenotype1 } />
        </div>
     </div>);
   }
