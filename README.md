@@ -1,4 +1,4 @@
-* QQuick start
+* Quick start
 
 1. build docker image
    docker build -t colocation:development .
