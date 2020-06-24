@@ -5,7 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { createStore } from 'redux';
 import { search_parameters , connector }  from './reducers/query'
 import ColocationList from './components/colocation'
-import Summary from './components/summary'
+import { SummaryCard } from './components/summary'
 import Search from './components/search'
 import { Provider } from 'react-redux';
 
@@ -19,21 +19,15 @@ class Content extends Component {
   return (
     <div>
 	 <header></header>
-	  <div id="content">
+	  <div id="content" className="content">
 	     <Search update_phenotype1={ update_phenotype1 } />
-	     <div className="card">
-                <h5 className="card-header">colocation</h5>
-	        <div className="card-body">
-  	           <Summary phenotype1={ phenotype1 } />
-	        </div>
-	     </div>
+	     <SummaryCard phenotype1={ phenotype1 } />
 	     <p></p>
 	     <ColocationList phenotype1={ phenotype1 } />
        </div>
     </div>);
   }
 }
-// https://stackoverflow.com/questions/41892553/could-not-find-store-in-either-the-context-or-props-of-connectapp
 const ConnectedContent = connector(Content);
 
 class App extends Component {

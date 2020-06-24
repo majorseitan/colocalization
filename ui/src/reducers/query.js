@@ -1,8 +1,7 @@
 import { connect } from 'react-redux';
 
-// action
+// Actions
 const update_phenotype1 = (phenotype1) => {
-    console.log('UPDATE_PHENOTYPE1 : ' + phenotype1);
     return { type: 'UPDATE_PHENOTYPE1',
              phenotype1 }
 }
@@ -18,13 +17,18 @@ const update_stop = (stop) => {
     return { type: 'UPDATE_STOP',
              stop }
 }
-
-// reducer
+/* Query a region an a phenotype
+ */
 const start_state = { phenotype1 : null,
                       chromosome : null,
                       start : null,
                       stop : null};
+// Reducer
 
+/* Reducer
+ * The role is to build up the state for the query
+ * by updating the state.
+ */
 const search_parameters = (state = start_state,action) => {
     switch(action.type){
         case 'UPDATE_PHENOTYPE1' :
@@ -43,7 +47,9 @@ const search_parameters = (state = start_state,action) => {
             return state;
     }
 }
-
+/* Just a pass through that clones,
+ * the state.
+ */
 function mapStateToProps(state) {
   return { ...state };
 };

@@ -14,7 +14,7 @@ class Summary extends Component {
     async updateSummary(){
          if(this.props.phenotype1 != null){
 
-	          const dataRequest = await fetch(`/colocation/${this.props.phenotype1}/summary?min_clpa=0.1`);
+	          const dataRequest = await fetch(`/api/colocation/${this.props.phenotype1}/summary?min_clpa=0.1`);
               const data = await dataRequest.json();
 
               if (data) { this.setState({  data: data, loading: false, }); }
@@ -38,10 +38,31 @@ class Summary extends Component {
 		    </p>)
 	}
     }
-}
+};
 
 Summary.propTypes = {
     phenotype1: PropTypes.string
+};
+
+class SummaryCard extends Component {
+  render(){
+    const phenotype1 = this.props.phenotype1;
+    if(this.props.phenotype1 == null){
+        return <p></p>;
+    } else {
+        return <div className="card">
+                    <h5 className="card-header">colocation</h5>
+	                <div className="card-body">
+  	                    <Summary phenotype1={ phenotype1 } />
+  	                </div>
+               </div>;
+    }
+  }
+};
+
+SummaryCard.propTypes = {
+    phenotype1: PropTypes.string
 }
 
-export default Summary;
+
+export { Summary, SummaryCard }
