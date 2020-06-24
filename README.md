@@ -1,8 +1,12 @@
 * Quick start
 
 1. build docker image
+
+
    docker build -t colocation:development .
+
    docker run -p 5000:5000 colocation:development
+
    curl -X POST -F csv=@"/path/to/my/file/test.csv" http://localhost:5000/api/colocation
 
 * Development
