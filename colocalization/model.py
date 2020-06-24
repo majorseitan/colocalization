@@ -138,10 +138,10 @@ def load_phenotype1(path):
     load_data(path)
 
 
-def list_colocation(phenotype1: str,
-                    min_clpa: typing.Optional[float] = None,
-                    sort_by: typing.Optional[str] = None,
-                    desc: bool = True):
+def list_colocalization(phenotype1: str,
+                        min_clpa: typing.Optional[float] = None,
+                        sort_by: typing.Optional[str] = None,
+                        desc: bool = True):
     q = db.session.query(Colocalization)
     q = q.filter(*filter_min_cpla(min_clpa))
     q = q.filter(Colocalization.phenotype1 == phenotype1)
@@ -151,8 +151,8 @@ def list_colocation(phenotype1: str,
     colocalizations = list(colocalizations)
     return colocalizations
 
-def summary_colocation(phenotype1: str,
-                       min_clpa: typing.Optional[float] = None):
+def summary_colocalization(phenotype1: str,
+                           min_clpa: typing.Optional[float] = None):
     count = db.session.query(Colocalization).count()
     unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
     unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
@@ -200,4 +200,3 @@ def csv_to_colocalization(line):
 @with_appcontext
 def cli_load(path: str) -> None:
     load_data(path)
-

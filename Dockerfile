@@ -1,11 +1,11 @@
 FROM node:14.4.0-stretch AS NODE_BUILDER
 ADD ui /opt/ui
-RUN cd /opt/ui; npm run build
+RUN cd /opt/ui && npm install && npm run build
 
 FROM python:3.8
 
 COPY --from=NODE_BUILDER /opt/ui/build /app/static
-COPY colocation /app/colocation
+COPY colocalization /app/colocalization
 ADD app.py /app/app.py
 ADD requirements.txt /app/requirements.txt
 
