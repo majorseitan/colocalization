@@ -1,7 +1,16 @@
 * Quick start
 
-1. build docker image
+  start the docker container
 
+  docker run -p 6666:8888 majorseitan/colocation:development
+
+  this command loads the data and returns the number of rows loaded
+
+  curl -X POST -F csv=@path/your/data/file http://localhost:8888/api/colocalization
+
+
+* Build container
+1. build docker image
 
    docker build -t colocalization:development .
 
