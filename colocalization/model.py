@@ -127,15 +127,18 @@ def load_data(path: str) -> None:
                            "vars_beta1", "vars_beta2",
                            "len_cs1", "len_cs2", "len_inter"]
         actual_header = next(reader)
+        count = 0
         assert expected_header == actual_header, f"expected header '{expected_header}' got '{actual_header}'"
         for line in reader:
+            count = count + 1
             colocalization = csv_to_colocalization(line)
             db.session.add(colocalization)
             db.session.commit()
+        return count
 
 def load_phenotype1(path):
     db.session.query(Colocalization).delete(synchronize_session='evaluate')
-    load_data(path)
+    return load_data(path)
 
 
 def list_colocalization(phenotype1: str,
