@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { createStore } from 'redux';
 import ColocalizationList from './components/colocalization'
 import { SummaryCard } from './components/summary'
 import Search from './components/search'
