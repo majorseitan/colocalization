@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { SearchContext } from '../contexts/SearchContext';
 
 class Summary extends Component {
     constructor() {
@@ -45,9 +46,10 @@ Summary.propTypes = {
 };
 
 class SummaryCard extends Component {
+  static contextType = SearchContext;
   render(){
-    const phenotype1 = this.props.phenotype1;
-    if(this.props.phenotype1 == null){
+    const { phenotype1 } = this.context;
+    if(phenotype1 == null){
         return <p></p>;
     } else {
         return <div className="card">

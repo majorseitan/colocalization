@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { SearchContext } from '../contexts/SearchContext';
 
 class Search extends Component {
     constructor() {
@@ -16,8 +17,10 @@ class Search extends Component {
           if (data) { this.setState({  data: data, loading: false, }); }
     }
 
+    static contextType = SearchContext;
+
     render(){
-    const update_phenotype1 = this.props.update_phenotype1;
+      const { updatePhenotype } = this.context;
   	if(this.state.loading){
 	    return <div>Loading ... </div>
 	} else {
@@ -26,7 +29,7 @@ class Search extends Component {
                 <p></p>
                 <form>
                     <div className="form-group row">
-                        <select defaultValue={'DEFAULT'}  onChange={ (e) => update_phenotype1(e.target.value) }>
+                        <select defaultValue={'DEFAULT'}  onChange={ (e) => updatePhenotype(e.target.value) }>
                             <option disabled value="DEFAULT">Please select Phenotype1</option>
                             { this.state.data.map(c => <option key={c} value={ c }>{c}</option>) }
                          </select>
