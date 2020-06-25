@@ -33,8 +33,8 @@ class Summary extends Component {
 	} else {
 	    let summary = this.state.data;
 	    return (<p>This region has {` ${ summary.count }`} colocalizations ,
-		         unique genes {` ${ summary.unique_phenotype2 }`} ,
-		         unique tissues {` ${ summary.unique_tissue2 }`}
+		       {` ${ summary.unique_phenotype2 }`} unique genes  ,
+		        {` ${ summary.unique_tissue2 }`} unique tissues
 		    </p>)
 	}
     }

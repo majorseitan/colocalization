@@ -142,9 +142,9 @@ def list_colocalization(phenotype1: str,
                         min_clpa: typing.Optional[float] = None,
                         sort_by: typing.Optional[str] = None,
                         desc: bool = True):
+    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa))
     q = db.session.query(Colocalization)
-    q = q.filter(*filter_min_cpla(min_clpa))
-    q = q.filter(Colocalization.phenotype1 == phenotype1)
+    q = filter(q)
     q = q.order_by(*order_by_criterion(sort_by, desc))
     colocalizations = q.all()
     colocalizations = map(lambda r: {c: getattr(r,c) for c in Colocalization.column_names() }, colocalizations)
@@ -153,9 +153,10 @@ def list_colocalization(phenotype1: str,
 
 def summary_colocalization(phenotype1: str,
                            min_clpa: typing.Optional[float] = None):
-    count = db.session.query(Colocalization).count()
-    unique_phenotype2 = db.session.query(func.count(func.distinct(Colocalization.phenotype2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
-    unique_tissue2 = db.session.query(func.count(func.distinct(Colocalization.tissue2))).filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa)).scalar()
+    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa))
+    count = filter(db.session.query(Colocalization)).count()
+    unique_phenotype2 = filter(db.session.query(func.count(func.distinct(Colocalization.phenotype2)))).scalar()
+    unique_tissue2 = filter(db.session.query(func.count(func.distinct(Colocalization.tissue2)))).scalar()
     result = {"count": count,
               "unique_phenotype2": unique_phenotype2,
               "unique_tissue2": unique_tissue2}
