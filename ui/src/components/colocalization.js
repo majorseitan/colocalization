@@ -1,5 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import NumberFormat from 'react-number-format';
+import { chipTableCols } from '../pheweb/tables';
+import ReactTable from 'react-table';
+import useTable from  'react-table';
+
+
+
 
 const Value = ({value}) => {
     return (<td className="text-muted">{ `${value}` }</td>)
@@ -8,21 +15,38 @@ const Value = ({value}) => {
 const Colocalization = ({colocalization}) => {
     return (
 	<tr>
-	    <Value value={colocalization.source1}/>
+	    <Value value={colocalization.source2}/>
 	    <Value value={colocalization.locus_id1}/>
 	    <Value value={colocalization.phenotype2}/>
 	    <Value value={colocalization.phenotype2_description}/>
-	    <Value value={colocalization.clpp}/>
-	    <Value value={colocalization.clpa}/>
+	    <Value value={colocalization.tissue2.replace(/_/g,' ')}/>
+	    <NumberFormat value={colocalization.clpp} displayType={'text'} decimalScale={2} renderText={value => <td>{value}</td>} />
+	    <NumberFormat value={colocalization.clpa} displayType={'text'} decimalScale={2} renderText={value => <td>{value}</td>} />
 	</tr>
     )
 };
 
 class ColocalizationList extends Component {
     constructor() {
-	super()
+	super();
 
-	this.state = { data : [], loading: true }; }
+	this.state = { data: null,
+	               columns: [ { Header : "source" , accessor: "source2" },
+	                          { Header : "locus id" , accessor: "locus_id1" },
+	                          { Header : "QTL code" , accessor: "phenotype1" },
+	                          { Header : "QTL" , accessor: "phenotype1_description" },
+	                          { Header : "clpp" , accessor: "clpp" },
+	                          { Header : "clpa" , accessor: "clpa" } ],
+	               dataToDownload: [],
+	               filtered: [],
+	               headers: [ {label: 'source', key: 'LONGNAME'},
+	                          {label: 'locus id', key: 'LONGNAME'},
+	                          {label: 'QTL code', key: 'LONGNAME'},
+	                          {label: 'QTL', key: 'LONGNAME'},
+	                          {label: 'clpp', key: 'LONGNAME'},
+	                          {label: 'clpa', key: 'LONGNAME'} ] };
+
+	}
 
     async updateColocalizationList(){
         	if(this.props.phenotype1 != null){
@@ -42,16 +66,19 @@ class ColocalizationList extends Component {
     render() {
 	if(this.props.phenotype1 == null){
         return <div/>
-    } else if(this.state.loading){
+    } else if(this.state.data == null){
 	    return <div>Loading ... </div>
 	} else {
+
+    //return ReactTable(this.state.columns,this.state.data);
 	    return <table className="table">
 	        <thead>
                    <tr>
-	                   <th>source1</th>
-	                   <th>locus_id1</th>
-                       <th>phenotype1</th>
-	                   <th>phenotype1_description</th>
+	                   <th>source</th>
+	                   <th>locus id</th>
+                       <th>QTL code</th>
+	                   <th>QTL</th>
+	                   <th>tissue</th>
 	                   <th>clpp</th>
                        <th>clpa</th>
                    </tr>
@@ -60,8 +87,6 @@ class ColocalizationList extends Component {
 	        { this.state.data.map((c,i) => <Colocalization key={i} colocalization={ c } />) }
 	        </tbody>
         </table>
-
-
 
 	}
     }
