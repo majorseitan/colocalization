@@ -1,9 +1,7 @@
-import React, { Component , useState, useEffect , useContext } from 'react';
+import React, { useState, useEffect , useContext } from 'react';
 import PropTypes from 'prop-types';
 import NumberFormat from 'react-number-format';
-import { chipTableCols } from '../pheweb/tables';
-import ReactTable from 'react-table';
-import useTable from  'react-table';
+import { useTable } from 'react-table';
 import { SearchContext } from '../contexts/SearchContext';
 import axios from 'axios'
 
@@ -25,6 +23,40 @@ const Colocalization = ({colocalization}) => {
     )
 };
 
+const Table = ({ columns, data }) => {
+  const { getTableProps,
+          getTableBodyProps,
+          headerGroups,
+          rows,
+          prepareRow } = useTable({ columns, data });
+
+  return (
+    <table {...getTableProps()}>
+      <thead>
+        {headerGroups.map(headerGroup => (
+          <tr {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers.map(column => (
+              <th {...column.getHeaderProps()}>{column.render("Header")}</th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      <tbody {...getTableBodyProps()}>
+        {rows.map((row, i) => {
+          prepareRow(row);
+          return (
+            <tr {...row.getRowProps()}>
+              {row.cells.map(cell => {
+                return <td {...cell.getCellProps()}>{cell.render("Cell")}</td>;
+              })}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+};
+
 const ColocalizationList = (props) => {
     const { phenotype1 } = useContext(SearchContext);
     useEffect( () => {
@@ -35,29 +67,22 @@ const ColocalizationList = (props) => {
     function getCocalizationList(){
         if(phenotype1 !== null){
             const url = `/api/colocalization/${phenotype1}?min_clpa=0.1&sort_by=clpa&order_by=desc`;
-            axios.get(url).then(({data}) => { setCocalizationList(data) } ).catch(function(error){ alert(error);})
+            axios.get(url).then((d) => { setCocalizationList(d.data); console.log(d.data); /**/ } ).catch(function(error){ alert(error);});
         }
     }
 
     if(phenotype1 == null) {
-        return  <div/>;
+        return  <div />;
     } else if(colocalizationList != null){
-        return <table className="table">
-	            <thead>
-                       <tr>
-	                       <th>source</th>
-	                       <th>locus id</th>
-                           <th>QTL code</th>
-	                       <th>QTL</th>
-	                       <th>tissue</th>
-	                       <th>clpp</th>
-                           <th>clpa</th>
-                        </tr>
-	            </thead>
-	            <tbody>
-	            { colocalizationList.map((c,i) => <Colocalization key={i} colocalization={ c } />) }
-	            </tbody>
-        </table>
+        const columns = [ { Header: "source", accessor: "source2" },
+                          { Header: "locus id", accessor: "locus_id1" },
+                          { Header: "QTL code", accessor: "phenotype2" },
+                          { Header: "QTL", accessor: "phenotype2_description" },
+                          { Header: "tissue", accessor: "tissue2" },
+                          { Header: "clpp", accessor: "clpp" },
+                          { Header: "clpa", accessor: "clpa" }];
+
+        return <Table data={colocalizationList} columns={columns} />;
     } else {
         return (<div>Loading ... </div>);
     }
