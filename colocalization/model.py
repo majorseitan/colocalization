@@ -52,18 +52,6 @@ class Colocalization(db.Model):
     def column_names():
         return [ c.name for c in Colocalization.__table__.columns ]
 
-@data_cli.command("init")
-@with_appcontext
-def load_data() -> None:
-    db.create_all()
-
-
-@data_cli.command("harness")
-@with_appcontext
-def load_data() -> None:
-    import pdb; pdb.set_trace()
-
-
 
 X = typing.TypeVar('X')
 
@@ -198,6 +186,17 @@ def csv_to_colocalization(line):
                                     len_cs2=nvl(line[23], int),
                                     len_inter=nvl(line[24], int))
     return colocalization
+
+@data_cli.command("init")
+@with_appcontext
+def init() -> None:
+    db.create_all()
+
+
+@data_cli.command("harness")
+@with_appcontext
+def harness() -> None:
+    import pdb; pdb.set_trace()
 
 @data_cli.command("load")
 @click.argument("path")

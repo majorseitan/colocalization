@@ -1,5 +1,9 @@
 * Quick start
 
+  pull the container
+
+  docker pull majorseitan/colocation:development
+
   start the docker container
 
   docker run -p 6666:8888 majorseitan/colocation:development
