@@ -14,10 +14,10 @@ render() {
 	 <header></header>
 	  <div id="content" className="content">
 	     <SearchContextProvider>
-	        <Search /*update_phenotype1={ update_phenotype1 }*/ />
-	        <SummaryCard /*phenotype1={ phenotype1 }*/ />
+	        <Search/>
+	        <SummaryCard />
 	        <p></p>
-	        <ColocalizationList /*phenotype1={ phenotype1 }*/ />
+	        <ColocalizationList />
          </SearchContextProvider>
        </div>
     </div>

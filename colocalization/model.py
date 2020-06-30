@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import json
 from sqlalchemy import func, distinct
+import gzip
 
 db = SQLAlchemy()
 data_cli = AppGroup('data')
@@ -100,7 +101,7 @@ def list_phenotype1(min_clpa: typing.Optional[float] = None,
     return phenotype1
 
 def load_data(path: str) -> None:
-    with open(path, 'r') as csv_file:
+    with gzip.open(path, "rt") if path.endswith("gz") else open(path, 'r') as csv_file:
         reader = csv.reader(csv_file, delimiter='\t', )
         expected_header = ["source1", "source2",
                            "pheno1", "pheno1_description",
@@ -128,6 +129,8 @@ def load_phenotype1(path):
     db.session.query(Colocalization).delete(synchronize_session='evaluate')
     return load_data(path)
 
+def row_to_dict(colum_names):
+    return lambda r: {c: getattr(r,c) for c in colum_names }
 
 def list_colocalization(phenotype1: str,
                         min_clpa: typing.Optional[float] = None,
@@ -138,7 +141,8 @@ def list_colocalization(phenotype1: str,
     q = filter(q)
     q = q.order_by(*order_by_criterion(sort_by, desc))
     colocalizations = q.all()
-    colocalizations = map(lambda r: {c: getattr(r,c) for c in Colocalization.column_names() }, colocalizations)
+    colocalizations = map(row_to_dict(Colocalization.column_names()),
+                          colocalizations)
     colocalizations = list(colocalizations)
     return colocalizations
 
@@ -153,6 +157,27 @@ def summary_colocalization(phenotype1: str,
               "unique_tissue2": unique_tissue2}
     return result
 
+def locus_colocation(phenotype1: str,
+                     locus_id1: str,
+                     min_clpa: typing.Optional[float] = None,
+                     sort_by: typing.Optional[str] = "cpla",
+                     desc: bool = True,
+                     limit: typing.Optional[int] = 1):
+    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,
+                                 Colocalization.locus_id1 == locus_id1,
+                                 *filter_min_cpla(min_clpa))
+    count = filter(db.session.query(Colocalization)).count()
+    q = db.session.query(Colocalization)
+    q = filter(q)
+    q = q.order_by(*order_by_criterion(sort_by, desc))
+    if limit is not None:
+        q = q.limit(limit)
+    colocalizations = q.all()
+    colocalizations = map(row_to_dict(Colocalization.column_names()),
+                          colocalizations)
+    colocalizations = list(colocalizations)
+    return { "count" : count ,
+             "rows" : colocalizations }
 
 def csv_to_colocalization(line):
     colocalization = Colocalization(source1=nvl(line[0]),

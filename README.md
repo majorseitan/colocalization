@@ -6,9 +6,9 @@
 
   start the docker container
 
-  docker run -p 6666:8888 majorseitan/colocation:development
+  docker run -p 8888:5000 majorseitan/colocation:development
 
-  this command loads the data and returns the number of rows loaded
+  the data can be uploaded via form or by curl
 
   curl -X POST -F csv=@path/your/data/file http://localhost:8888/api/colocalization
 
