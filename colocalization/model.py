@@ -1,15 +1,31 @@
 import click
 import csv
 import typing
-from flask.cli import AppGroup, with_appcontext
 from flask_sqlalchemy import SQLAlchemy
 import os
 import json
 from sqlalchemy import func, distinct
 import gzip
+from sqlalchemy.ext.hybrid import hybrid_property
+import abc
+
+
+class Colocalization(object):
+    None
+
+class PheonotypeSummary(object):
+    None
+
+class LocusSummary(object):
+    None
+
+class ColocalizationDAO(object):
+    def get_phenotype_range_list(phenotype: str,chromosome: int,start: int,stop : int) -> typing.List[Colocalization]
+    def get_phenotype_range_summary(phenotype: str,chromosome: int,start: int,stop : int) -> ColocalizationSummary
+    def get_locus_summary(locus: str) -> ColocalizationLocusSummary
+
 
 db = SQLAlchemy()
-data_cli = AppGroup('data')
 
 SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////tmp/tmp.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = json.loads(os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', 'False').lower())
@@ -27,7 +43,18 @@ class Colocalization(db.Model):
 
     tissue1 = db.Column(db.String(80), unique=False, nullable=True, primary_key=True)
     tissue2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-    locus_id1 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
+
+    # locus_id1 data is split for search
+    @hybrid_property
+    def locus_id1(self):
+        return f"chr{self.locus_id1_chromosome}_{self.locus_id1_position}_{locus_id1_ref}_{locus_id1_alt}"
+
+    locus_id1_chromosome = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
+    locus_id1_position = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
+    locus_id1_ref = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
+    locus_id1_alt = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
+
+
     locus_id2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
 
     chromosome = db.Column(db.Integer, unique=False, nullable=False)
@@ -100,6 +127,7 @@ def list_phenotype1(min_clpa: typing.Optional[float] = None,
     phenotype1 = [r[0] for r in q.all()]
     return phenotype1
 
+
 def load_data(path: str) -> None:
     with gzip.open(path, "rt") if path.endswith("gz") else open(path, 'r') as csv_file:
         reader = csv.reader(csv_file, delimiter='\t', )
@@ -125,20 +153,28 @@ def load_data(path: str) -> None:
             db.session.commit()
         return count
 
-def load_phenotype1(path):
+
+def load_phenotype1(path : str):
     db.session.query(Colocalization).delete(synchronize_session='evaluate')
     return load_data(path)
 
-def row_to_dict(colum_names):
-    return lambda r: {c: getattr(r,c) for c in colum_names }
+
+def row_to_dict(column_names):
+    return lambda r: {c: getattr(r, c) for c in column_names}
+
 
 def list_colocalization(phenotype1: str,
+                        chromosome: int,
+                        start: int,
+                        stop: int,
                         min_clpa: typing.Optional[float] = None,
                         sort_by: typing.Optional[str] = None,
                         desc: bool = True):
-    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa))
+    def query_filter(query):
+        return query.filter(Colocalization.phenotype1 == phenotype1,
+                            *filter_min_cpla(min_clpa))
     q = db.session.query(Colocalization)
-    q = filter(q)
+    q = query_filter(q)
     q = q.order_by(*order_by_criterion(sort_by, desc))
     colocalizations = q.all()
     colocalizations = map(row_to_dict(Colocalization.column_names()),
@@ -146,29 +182,37 @@ def list_colocalization(phenotype1: str,
     colocalizations = list(colocalizations)
     return colocalizations
 
+
 def summary_colocalization(phenotype1: str,
+                           chromosome: int,
+                           start: int,
+                           stop: int,
                            min_clpa: typing.Optional[float] = None):
-    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,*filter_min_cpla(min_clpa))
-    count = filter(db.session.query(Colocalization)).count()
-    unique_phenotype2 = filter(db.session.query(func.count(func.distinct(Colocalization.phenotype2)))).scalar()
-    unique_tissue2 = filter(db.session.query(func.count(func.distinct(Colocalization.tissue2)))).scalar()
+    def query_filter(query):
+        return query.filter(Colocalization.phenotype1 == phenotype1,
+                            *filter_min_cpla(min_clpa))
+    count = query_filter(db.session.query(Colocalization)).count()
+    unique_phenotype2 = query_filter(db.session.query(func.count(func.distinct(Colocalization.phenotype2)))).scalar()
+    unique_tissue2 = query_filter(db.session.query(func.count(func.distinct(Colocalization.tissue2)))).scalar()
     result = {"count": count,
               "unique_phenotype2": unique_phenotype2,
               "unique_tissue2": unique_tissue2}
     return result
 
-def locus_colocation(phenotype1: str,
-                     locus_id1: str,
-                     min_clpa: typing.Optional[float] = None,
-                     sort_by: typing.Optional[str] = "cpla",
-                     desc: bool = True,
-                     limit: typing.Optional[int] = 1):
-    filter = lambda q : q.filter(Colocalization.phenotype1 == phenotype1,
-                                 Colocalization.locus_id1 == locus_id1,
-                                 *filter_min_cpla(min_clpa))
+
+def locus_colocalization(phenotype1: str,
+                         locus_id1: str,
+                         min_clpa: typing.Optional[float] = None,
+                         sort_by: typing.Optional[str] = "cpla",
+                         desc: bool = True,
+                         limit: typing.Optional[int] = 1):
+    def query_filter(query):
+        return query.filter(Colocalization.phenotype1 == phenotype1,
+                            Colocalization.locus_id1 == locus_id1,
+                            *filter_min_cpla(min_clpa))
     count = filter(db.session.query(Colocalization)).count()
     q = db.session.query(Colocalization)
-    q = filter(q)
+    q = query_filter(q)
     q = q.order_by(*order_by_criterion(sort_by, desc))
     if limit is not None:
         q = q.limit(limit)
@@ -176,8 +220,9 @@ def locus_colocation(phenotype1: str,
     colocalizations = map(row_to_dict(Colocalization.column_names()),
                           colocalizations)
     colocalizations = list(colocalizations)
-    return { "count" : count ,
-             "rows" : colocalizations }
+    return {"count": count,
+            "rows": colocalizations}
+
 
 def csv_to_colocalization(line):
     colocalization = Colocalization(source1=nvl(line[0]),
@@ -211,20 +256,3 @@ def csv_to_colocalization(line):
                                     len_cs2=nvl(line[23], int),
                                     len_inter=nvl(line[24], int))
     return colocalization
-
-@data_cli.command("init")
-@with_appcontext
-def init() -> None:
-    db.create_all()
-
-
-@data_cli.command("harness")
-@with_appcontext
-def harness() -> None:
-    import pdb; pdb.set_trace()
-
-@data_cli.command("load")
-@click.argument("path")
-@with_appcontext
-def cli_load(path: str) -> None:
-    load_data(path)
