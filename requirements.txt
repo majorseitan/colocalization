@@ -6,3 +6,4 @@ MarkupSafe
 SQLAlchemy
 Werkzeug
 pytest
+attr
