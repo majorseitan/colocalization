@@ -2,7 +2,7 @@ from typing import Tuple, Optional
 import re
 
 
-def parse_range(text : str) -> Optional[Tuple[int,int,int]]:
+def parse_range(text: str) -> Optional[Tuple[int,int,int]]:
     """
     Takes a string representing a range and returns a tuple of integers
     (chromosome,start,stop).  Returns None if it cannot be parsed.

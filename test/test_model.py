@@ -6,7 +6,7 @@ import uuid
 import random
 import pytest
 
-from colocalization.model import _nvl, Colocalization, SearchSummary, SearchResults
+from colocalization.model import _nvl, Colocalization, SearchSummary, SearchResults, ChromosomeRange
 
 
 def test_nvl():
@@ -74,3 +74,19 @@ def test_search_results():
     with pytest.raises(TypeError):
         SearchResults(count=1,
                       colocalizations=[1])
+
+
+def test_chromosome_range():
+    assert "1:2-3" == ChromosomeRange(chromosome=1,
+                                      start=2,
+                                      stop=3).to_str()
+    # round trip
+    sample = "{chromosome}:{start}-{stop}".format(chromosome=random.randrange(100),
+                                                  start=random.randrange(100),
+                                                  stop=random.randrange(100),)
+    assert ChromosomeRange.from_str(sample).to_str() == sample
+    expected = {"chromosome": random.randrange(100),
+                "start": random.randrange(100),
+                "stop":  random.randrange(100)}
+    actual = ChromosomeRange(**ChromosomeRange(**expected).json_rep()).json_rep()
+    assert expected == actual

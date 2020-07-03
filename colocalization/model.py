@@ -3,6 +3,7 @@ import typing
 import attr
 from attr.validators import instance_of
 from data_access.db import JSONifiable
+import re
 
 X = typing.TypeVar('X')
 
@@ -28,8 +29,7 @@ def _nvl(value: str, f: typing.Callable[[str], X]) -> typing.Optional[X]:
 @attr.s
 class Colocalization(JSONifiable):
     """
-    DTO for colocalization.  Implemented as such due to the lack
-    of data classes.
+    DTO for colocalization.
 
     https://github.com/FINNGEN/colocalization/blob/master/docs/data_dictionary.txt
 
@@ -147,22 +147,58 @@ class SearchResults(JSONifiable):
         return self.__dict__
 
 
-class ColocalizationDAO():
+@attr.s
+class ChromosomeRange(JSONifiable):
+    """
+        Chromosome coordinate range
+
+        chromosome: chromosome
+        start: start of range
+        stop: end of range
+    """
+    chromosome = attr.ib(validator=instance_of(int))
+    start = attr.ib(validator=instance_of(int))
+    stop = attr.ib(validator=instance_of(int))
+
+    @staticmethod
+    def from_str(text: str) -> typing.Optional["ChromosomeRange"]:
+        """
+        Takes a string representing a range and returns a tuple of integers
+        (chromosome,start,stop).  Returns None if it cannot be parsed.
+        """
+        fragments = re.match(r'(?P<chromosome>\d+):(?P<start>\d+)-(?P<stop>\d+)', text)
+        if fragments is None:
+            None
+        else:
+            return ChromosomeRange(chromosome=int(fragments.group('chromosome')),
+                                   start=int(fragments.group('start')),
+                                   stop=int(fragments.group('stop')))
+
+    def to_str(self):
+        """
+
+        :return: string representation of range
+        """
+        return "{chromosome}:{start}-{stop}".format(chromosome=self.chromosome,
+                                                    start=self.start,
+                                                    stop=self.stop)
+
+    def json_rep(self):
+        return self.__dict__
+
+
+class ColocalizationDAO:
     @abc.abstractmethod
     def get_phenotype_range(self,
                             phenotype: str,
-                            chromosome: int,
-                            start: int,
-                            stop: int,
-                            flags: typing.Dict[str, typing.Any]) -> None:
+                            chromosome_range: ChromosomeRange,
+                            flags: typing.Dict[str, typing.Any]) -> SearchResults:
         """
         Search for colocalization that match
         phenotype and range and return them.
 
         :param phenotype: phenotype to match in search
-        :param chromosome: chromosome to search
-        :param start: start of range
-        :param stop: end of range
+        :param chromosome_range: chromosome range to search
         :param flags: a collection of optional flags
 
         :return: matching colocalizations
@@ -172,18 +208,14 @@ class ColocalizationDAO():
     @abc.abstractmethod
     def get_phenotype_range_summary(self,
                                     phenotype: str,
-                                    chromosome: int,
-                                    start: int,
-                                    stop: int,
+                                    chromosome_range: ChromosomeRange,
                                     flags: typing.Dict[str, typing.Any]) -> SearchSummary:
         """
         Search for colocalization that match
         phenotype and range a summary of matches.
 
         :param phenotype: phenotype to match in search
-        :param chromosome: chromosome to search
-        :param start: start of range
-        :param stop: end of range
+        :param chromosome_range: chromosome range to search
         :param flags: a collection of optional flags
 
         :return: summary of matching colocalizations
