@@ -1,157 +1,19 @@
 import abc
-import csv
 import typing
-from flask_sqlalchemy import SQLAlchemy
-import os
 import json
-from sqlalchemy import func, distinct
-import gzip
-from sqlalchemy.ext.hybrid import hybrid_property
-from dataclasses import dataclass
-
-
-@dataclass
-class Colocalization(object):
-    source1: str
-    source2: str
-
-    phenotype1: str
-    phenotype1_description: str
-    phenotype2: str
-    phenotype2_description: str
-
-    tissue1: str
-    tissue2: str
-
-    #def locus_id1(self):
-    #    return "chr{chromosome}_{position}_{ref}_{alt}".format(chromosome=self.locus_id1_chromosome,
-    #                                                           position=self.locus_id1_position,
-    #                                                           ref=self.locus_id1_ref,
-    #                                                           alt=self.locus_id1_alt)
-    #
-    #locus_id1_chromosome = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
-    #locus_id1_position = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
-    #locus_id1_ref = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
-    #locus_id1_alt = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
-
-    locus_id1: str
-    locus_id2: str
-
-    chromosome: int
-    start: int
-    stop: int
-
-    clpp: float
-    clpa: float
-    beta_id1: float
-    beta_id2: float
-
-    variation: str
-    vars_pip1: str
-    vars_pip2: str
-    vars_beta1: str
-    vars_beta2: str
-    len_cs1: int
-    len_cs2: int
-    len_inter: int
-
-
-@dataclass
-class PhenotypeSummary(object):
-    None
-
-
-@dataclass
-class LocusSummary(object):
-    None
-
-
-class ColocalizationDAO(object):
-    @abc.abstractmethod
-    def get_phenotype_range_list(self,
-                                 phenotype: str,
-                                 chromosome: int,
-                                 start: int,
-                                 stop: int) -> typing.List[Colocalization]:
-        return
-
-    @abc.abstractmethod
-    def get_phenotype_range_summary(self,
-                                    phenotype: str,
-                                    chromosome: int,
-                                    start: int,
-                                    stop: int) -> PhenotypeSummary:
-        return
-
-    @abc.abstractmethod
-    def get_locus_summary(self,
-                          locus: str) -> LocusSummary:
-        return
-
-
-db = SQLAlchemy()
-
-SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////tmp/tmp.db')
-SQLALCHEMY_TRACK_MODIFICATIONS = json.loads(os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', 'False').lower())
-
-
-class Colocalization(db.Model):
-
-    source1 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-    source2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-
-    phenotype1 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-    phenotype1_description = db.Column(db.String(80), unique=False, nullable=False)
-    phenotype2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-    phenotype2_description = db.Column(db.String(80), unique=False, nullable=False)
-
-    tissue1 = db.Column(db.String(80), unique=False, nullable=True, primary_key=True)
-    tissue2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-
-    # locus_id1 data is split for search
-    @hybrid_property
-    def locus_id1(self):
-        return "chr{chromosome}_{position}_{ref}_{alt}".format(chromosome=self.locus_id1_chromosome,
-                                                               position=self.locus_id1_position,
-                                                               ref=self.locus_id1_ref,
-                                                               alt=self.locus_id1_alt)
-
-    locus_id1_chromosome = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
-    locus_id1_position = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
-    locus_id1_ref = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
-    locus_id1_alt = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
-
-
-    locus_id2 = db.Column(db.String(80), unique=False, nullable=False, primary_key=True)
-
-    chromosome = db.Column(db.Integer, unique=False, nullable=False)
-    start = db.Column(db.Integer, unique=False, nullable=False)
-    stop = db.Column(db.Integer, unique=False, nullable=False)
-
-    clpp = db.Column(db.Float, unique=False, nullable=False)
-    clpa = db.Column(db.Float, unique=False, nullable=False)
-    beta_id1 = db.Column(db.Float, unique=False, nullable=False)
-    beta_id2 = db.Column(db.Float, unique=False, nullable=False)
-
-    variation = db.Column(db.String(80), unique=False, nullable=False)
-    vars_pip1 = db.Column(db.String(80), unique=False, nullable=False)
-    vars_pip2 = db.Column(db.String(80), unique=False, nullable=False)
-    vars_beta1 = db.Column(db.String(80), unique=False, nullable=False)
-    vars_beta2 = db.Column(db.String(80), unique=False, nullable=False)
-    len_cs1 = db.Column(db.Integer, unique=False, nullable=False)
-    len_cs2 = db.Column(db.Integer, unique=False, nullable=False)
-    len_inter = db.Column(db.Integer, unique=False, nullable=False)
-
-
-    @staticmethod
-    def column_names():
-        return [ c.name for c in Colocalization.__table__.columns ]
-
 
 X = typing.TypeVar('X')
 
 
-def nvl(value: str, f=str) -> typing.Optional[X]:
+def _nvl(value: str, f: typing.Callable[[str], X]) -> typing.Optional[X]:
+    """
+    Wrapper to convert strings to a given type, where the
+    empty string, or None is returned as None.
+
+    :param value: string representing type X
+    :param f: function from string to type X
+    :return: X or None
+    """
     result = None
     if value is None:
         result = None
@@ -162,165 +24,214 @@ def nvl(value: str, f=str) -> typing.Optional[X]:
     return result
 
 
-def filter_min_cpla(min_clpa: typing.Optional[float]):
-    filter_term = None
-    if min_clpa:
-        filter_term = [Colocalization.clpa >= min_clpa]
-    else:
-        filter_term = []
-    return filter_term
+class Colocalization(object):
+    """
+    DTO for colocalization.  Implemented as such due to the lack
+    of data classes.
+
+    see : https://github.com/FINNGEN/colocalization/blob/master/docs/data_dictionary.txt
+
+    """
+    def __init__(self,
+                 source1: str, source2: str,
+                 phenotype1: str, phenotype1_description: str,
+                 phenotype2: str, phenotype2_description: str,
+                 tissue1: str, tissue2: str,
+                 locus_id1: str, locus_id2: str,
+                 chromosome: int, start: int, stop: int,
+                 clpp: float, clpa: float, beta_id1: float, beta_id2: float,
+                 variation: str,
+                 vars_pip1: str, vars_pip2: str,
+                 vars_beta1: str, vars_beta2: str,
+                 len_cs1: int, len_cs2: int,
+                 len_inter: int) -> None:
+        self.source1 = source1
+        self.source2 = source2
+
+        self.phenotype1 = phenotype1
+        self.phenotype1_description = phenotype1_description
+
+        self.phenotype2 = phenotype2
+        self.phenotype2_description = phenotype2_description
+
+        self.tissue1 = tissue1
+        self.tissue2 = tissue2
+
+        self.locus_id1 = locus_id1
+        self.locus_id2 = locus_id2
+
+        self.chromosome = chromosome
+        self.start = start
+        self.stop = stop
+
+        self.clpp = clpp
+        self.clpa = clpa
+        self.beta_id1 = beta_id1
+        self.beta_id2 = beta_id2
+
+        self.variation = variation
+        self.vars_pip1 = vars_pip1
+        self.vars_pip2 = vars_pip2
+        self.vars_beta1 = vars_beta1
+        self.vars_beta2 = vars_beta2
+        self.len_cs1 = len_cs1
+        self.len_cs2 = len_cs2
+        self.len_inter = len_inter
+
+    def to_dict(self) -> typing.Dict[str, any]:
+        """
+        Return a dictionary containing a representation
+        of this object
+
+        :return: dictionary
+        """
+        return {"source1": self.source1,
+                "source2": self.source2,
+
+                "phenotype1": self.phenotype1,
+                "phenotype1_description": self.phenotype1_description,
+
+                "phenotype2": self.phenotype2,
+                "phenotype2_description": self.phenotype2_description,
+
+                "tissue1": self.tissue1,
+                "tissue2": self.tissue2,
+
+                "locus_id1": self.locus_id1,
+                "locus_id2": self.locus_id2,
+
+                "chromosome": self.chromosome,
+                "start": self.start,
+                "stop": self.stop,
+
+                "clpp": self.clpp,
+                "clpa": self.clpa,
+                "beta_id1": self.beta_id1,
+                "beta_id2": self.beta_id2,
+
+                "variation": self.variation,
+
+                "vars_pip1": self.vars_pip1,
+                "vars_pip2": self.vars_pip2,
+                "vars_beta1": self.vars_beta1,
+                "vars_beta2": self.vars_beta2,
+                "len_cs1": self.len_cs1,
+                "len_cs2": self.len_cs2,
+                "len_inter": self.len_inter }
+
+    @staticmethod
+    def from_list(line: typing.List[str]) -> "Colocalization":
+        """
+        Constructor method used to create colocalization from
+        a row of data.
+
+        the order of the columns are:
+        01..05 source1, source2, phenotype1, phenotype1_description, phenotype2
+        06..10 phenotype2_description, tissue1, tissue2, locus_id1, locus_id2
+        11..15 chromosome, start, stop, clpp, clpa
+        16..20 beta_id1, beta_id2, variation, vars_pip1, vars_pip2
+        21..25 vars_beta1, vars_beta2, len_cs1, len_cs2, len_inter
+
+        :param line: string array with value
+        :return: colocalization object
+        """
+        colocalization = Colocalization(source1=_nvl(line[0]),
+                                        source2=_nvl(line[1]),
+
+                                        phenotype1=_nvl(line[2]),
+                                        phenotype1_description=_nvl(line[3]),
+                                        phenotype2=_nvl(line[4]),
+                                        phenotype2_description=_nvl(line[5]),
+
+                                        tissue1=_nvl(line[6]),
+                                        tissue2=_nvl(line[7]),
+                                        locus_id1=_nvl(line[8]),
+                                        locus_id2=_nvl(line[9]),
+
+                                        chromosome=_nvl(line[10], int),
+                                        start=_nvl(line[11], int),
+                                        stop=_nvl(line[12], int),
+
+                                        clpp=_nvl(line[13], float),
+                                        clpa=_nvl(line[14], float),
+                                        beta_id1=_nvl(line[15], float),
+                                        beta_id2=_nvl(line[16], float),
+
+                                        variation=line[17],
+                                        vars_pip1=line[18],
+                                        vars_pip2=line[19],
+                                        vars_beta1=line[20],
+                                        vars_beta2=line[21],
+                                        len_cs1=_nvl(line[22], int),
+                                        len_cs2=_nvl(line[23], int),
+                                        len_inter=_nvl(line[24], int))
+        return colocalization
 
 
-def order_by_criterion(sort_by: typing.Optional[str],
-                       desc: typing.Optional[bool]):
-    column_name = Colocalization.column_names()
+class SearchSummary(object):
+    def __init__(self,
+                 count: int,
+                 unique_phenotype2: int,
+                 unique_tissue2: int) -> None:
+        """
+        A summary of colocalization records for a search.
 
-    if sort_by is not None and sort_by.lower() in column_name:
-        column = getattr(Colocalization, sort_by)
-        if desc:
-            column = column.desc()
-        else:
-            column = column.asc()
-        criterion = [column]
-    else:
-        criterion = []
-    return criterion
+        :param count: number of records found
+        :param unique_phenotype2: the number of unique phenotypes found
+        :param unique_tissue2: the number of unique tissues found
+        """
+        self.count = count
+        self.unique_phenotype2 = unique_phenotype2
+        self.unique_tissue2 = unique_tissue2
 
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        """
+        Returns a dictionary representation of this object.
 
-def list_phenotype1(min_clpa: typing.Optional[float] = None,
-                    desc=True):
-    q = db.session.query(distinct(Colocalization.phenotype1))
-    q = q.filter(*filter_min_cpla(min_clpa))
-    phenotype1 = [r[0] for r in q.all()]
-    return phenotype1
-
-
-def load_data(path: str) -> None:
-    with gzip.open(path, "rt") if path.endswith("gz") else open(path, 'r') as csv_file:
-        reader = csv.reader(csv_file, delimiter='\t', )
-        expected_header = ["source1", "source2",
-                           "pheno1", "pheno1_description",
-                           "pheno2", "pheno2_description",
-                           "tissue1", "tissue2",
-                           "locus_id1", "locus_id2",
-                           "chrom", "start", "stop",
-                           "clpp", "clpa",
-                           "beta_id1", "beta_id2",
-                           "vars",
-                           "vars_pip1", "vars_pip2",
-                           "vars_beta1", "vars_beta2",
-                           "len_cs1", "len_cs2", "len_inter"]
-        actual_header = next(reader)
-        count = 0
-        assert expected_header == actual_header, "expected header '{expected_header}' got '{actual_header}'".format(expected_header=expected_header,
-                                                                                                                    actual_header=actual_header)
-        for line in reader:
-            count = count + 1
-            colocalization = csv_to_colocalization(line)
-            db.session.add(colocalization)
-            db.session.commit()
-        return count
+        :return: dictionary
+        """
+        {"count": self.count,
+         "unique_phenotype2": self.unique_phenotype2,
+         "unique_tissue2": self.unique_tissue2}
 
 
-def load_phenotype1(path : str):
-    db.session.query(Colocalization).delete(synchronize_session='evaluate')
-    return load_data(path)
+class SearchResults(object):
+    """
+    """
+    def __init__(self,
+                 count: int,
+                 colocalization: typing.List[Colocalization]) -> None:
+        self.count = count
+        self.colocalization = colocalization
+
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        """
+        Returns a dictionary representation of this object.
+
+        :return: dictionary
+        """
+        {"count": self.count,
+         "colocalization": self.colocalization}
 
 
-def row_to_dict(column_names):
-    return lambda r: {c: getattr(r, c) for c in column_names}
+class ColocalizationDAO(object):
+    @abc.abstractmethod
+    def get_phenotype_range(self,
+                            phenotype: str,
+                            chromosome: int,
+                            start: int,
+                            stop: int) -> SearchResults:
+        return
 
+    @abc.abstractmethod
+    def get_phenotype_range_summary(self,
+                                    phenotype: str,
+                                    chromosome: int,
+                                    start: int,
+                                    stop: int) -> SearchSummary:
+        return
 
-def list_colocalization(phenotype1: str,
-                        chromosome: int,
-                        start: int,
-                        stop: int,
-                        min_clpa: typing.Optional[float] = None,
-                        sort_by: typing.Optional[str] = None,
-                        desc: bool = True):
-    def query_filter(query):
-        return query.filter(Colocalization.phenotype1 == phenotype1,
-                            *filter_min_cpla(min_clpa))
-    q = db.session.query(Colocalization)
-    q = query_filter(q)
-    q = q.order_by(*order_by_criterion(sort_by, desc))
-    colocalizations = q.all()
-    colocalizations = map(row_to_dict(Colocalization.column_names()),
-                          colocalizations)
-    colocalizations = list(colocalizations)
-    return colocalizations
-
-
-def summary_colocalization(phenotype1: str,
-                           chromosome: int,
-                           start: int,
-                           stop: int,
-                           min_clpa: typing.Optional[float] = None):
-    def query_filter(query):
-        return query.filter(Colocalization.phenotype1 == phenotype1,
-                            *filter_min_cpla(min_clpa))
-    count = query_filter(db.session.query(Colocalization)).count()
-    unique_phenotype2 = query_filter(db.session.query(func.count(func.distinct(Colocalization.phenotype2)))).scalar()
-    unique_tissue2 = query_filter(db.session.query(func.count(func.distinct(Colocalization.tissue2)))).scalar()
-    result = {"count": count,
-              "unique_phenotype2": unique_phenotype2,
-              "unique_tissue2": unique_tissue2}
-    return result
-
-
-def locus_colocalization(phenotype1: str,
-                         locus_id1: str,
-                         min_clpa: typing.Optional[float] = None,
-                         sort_by: typing.Optional[str] = "cpla",
-                         desc: bool = True,
-                         limit: typing.Optional[int] = 1):
-    def query_filter(query):
-        return query.filter(Colocalization.phenotype1 == phenotype1,
-                            Colocalization.locus_id1 == locus_id1,
-                            *filter_min_cpla(min_clpa))
-    count = filter(db.session.query(Colocalization)).count()
-    q = db.session.query(Colocalization)
-    q = query_filter(q)
-    q = q.order_by(*order_by_criterion(sort_by, desc))
-    if limit is not None:
-        q = q.limit(limit)
-    colocalizations = q.all()
-    colocalizations = map(row_to_dict(Colocalization.column_names()),
-                          colocalizations)
-    colocalizations = list(colocalizations)
-    return {"count": count,
-            "rows": colocalizations}
-
-
-def csv_to_colocalization(line):
-    colocalization = Colocalization(source1=nvl(line[0]),
-                                    source2=nvl(line[1]),
-
-                                    phenotype1=nvl(line[2]),
-                                    phenotype1_description=nvl(line[3]),
-                                    phenotype2=nvl(line[4]),
-                                    phenotype2_description=nvl(line[5]),
-
-                                    tissue1=nvl(line[6]),
-                                    tissue2=nvl(line[7]),
-                                    locus_id1=nvl(line[8]),
-                                    locus_id2=nvl(line[9]),
-
-                                    chromosome=nvl(line[10], int),
-                                    start=nvl(line[11], int),
-                                    stop=nvl(line[12], int),
-
-                                    clpp=nvl(line[13], float),
-                                    clpa=nvl(line[14], float),
-                                    beta_id1=nvl(line[15], float),
-                                    beta_id2=nvl(line[16], float),
-
-                                    variation=line[17],
-                                    vars_pip1=line[18],
-                                    vars_pip2=line[19],
-                                    vars_beta1=line[20],
-                                    vars_beta2=line[21],
-                                    len_cs1=nvl(line[22], int),
-                                    len_cs2=nvl(line[23], int),
-                                    len_inter=nvl(line[24], int))
-    return colocalization
+    @abc.abstractmethod
+    def get_locus(self,
+                  locus: str) -> SearchResults:
+        return

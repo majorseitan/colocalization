@@ -6,9 +6,9 @@ import json
 import os
 import tempfile
 from werkzeug.utils import secure_filename
-from colocalization.model import  db
+from colocalization.model_db import db
 from colocalization.cli import data_cli
-from colocalization.model import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, list_phenotype1
+from colocalization.model_db import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, list_phenotype1
 from colocalization.common import parse_range
 from colocalization.view import colocalization, development
 
