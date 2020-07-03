@@ -1,4 +1,4 @@
-import click
+import abc
 import csv
 import typing
 from flask_sqlalchemy import SQLAlchemy
@@ -7,22 +7,86 @@ import json
 from sqlalchemy import func, distinct
 import gzip
 from sqlalchemy.ext.hybrid import hybrid_property
-import abc
+from dataclasses import dataclass
 
 
+@dataclass
 class Colocalization(object):
+    source1: str
+    source2: str
+
+    phenotype1: str
+    phenotype1_description: str
+    phenotype2: str
+    phenotype2_description: str
+
+    tissue1: str
+    tissue2: str
+
+    #def locus_id1(self):
+    #    return "chr{chromosome}_{position}_{ref}_{alt}".format(chromosome=self.locus_id1_chromosome,
+    #                                                           position=self.locus_id1_position,
+    #                                                           ref=self.locus_id1_ref,
+    #                                                           alt=self.locus_id1_alt)
+    #
+    #locus_id1_chromosome = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
+    #locus_id1_position = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
+    #locus_id1_ref = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
+    #locus_id1_alt = db.Column(db.String(1), unique=False, nullable=False, primary_key=True)
+
+    locus_id1: str
+    locus_id2: str
+
+    chromosome: int
+    start: int
+    stop: int
+
+    clpp: float
+    clpa: float
+    beta_id1: float
+    beta_id2: float
+
+    variation: str
+    vars_pip1: str
+    vars_pip2: str
+    vars_beta1: str
+    vars_beta2: str
+    len_cs1: int
+    len_cs2: int
+    len_inter: int
+
+
+@dataclass
+class PhenotypeSummary(object):
     None
 
-class PheonotypeSummary(object):
-    None
 
+@dataclass
 class LocusSummary(object):
     None
 
+
 class ColocalizationDAO(object):
-    def get_phenotype_range_list(phenotype: str,chromosome: int,start: int,stop : int) -> typing.List[Colocalization]
-    def get_phenotype_range_summary(phenotype: str,chromosome: int,start: int,stop : int) -> ColocalizationSummary
-    def get_locus_summary(locus: str) -> ColocalizationLocusSummary
+    @abc.abstractmethod
+    def get_phenotype_range_list(self,
+                                 phenotype: str,
+                                 chromosome: int,
+                                 start: int,
+                                 stop: int) -> typing.List[Colocalization]:
+        return
+
+    @abc.abstractmethod
+    def get_phenotype_range_summary(self,
+                                    phenotype: str,
+                                    chromosome: int,
+                                    start: int,
+                                    stop: int) -> PhenotypeSummary:
+        return
+
+    @abc.abstractmethod
+    def get_locus_summary(self,
+                          locus: str) -> LocusSummary:
+        return
 
 
 db = SQLAlchemy()
@@ -47,7 +111,10 @@ class Colocalization(db.Model):
     # locus_id1 data is split for search
     @hybrid_property
     def locus_id1(self):
-        return f"chr{self.locus_id1_chromosome}_{self.locus_id1_position}_{locus_id1_ref}_{locus_id1_alt}"
+        return "chr{chromosome}_{position}_{ref}_{alt}".format(chromosome=self.locus_id1_chromosome,
+                                                               position=self.locus_id1_position,
+                                                               ref=self.locus_id1_ref,
+                                                               alt=self.locus_id1_alt)
 
     locus_id1_chromosome = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
     locus_id1_position = db.Column(db.Integer, unique=False, nullable=False, primary_key=True)
@@ -145,7 +212,8 @@ def load_data(path: str) -> None:
                            "len_cs1", "len_cs2", "len_inter"]
         actual_header = next(reader)
         count = 0
-        assert expected_header == actual_header, f"expected header '{expected_header}' got '{actual_header}'"
+        assert expected_header == actual_header, "expected header '{expected_header}' got '{actual_header}'".format(expected_header=expected_header,
+                                                                                                                    actual_header=actual_header)
         for line in reader:
             count = count + 1
             colocalization = csv_to_colocalization(line)
